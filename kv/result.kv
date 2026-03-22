@@ -1,0 +1,186 @@
+#:import utils kivy.utils
+
+<ResultScreen>:
+    name: "result"
+
+    BoxLayout:
+        orientation: "vertical"
+        padding: dp(20)
+        spacing: dp(12)
+
+        # ── Header ──
+        BoxLayout:
+            size_hint_y: None
+            height: dp(50)
+            spacing: dp(10)
+            Button:
+                text: "<"
+                size_hint_x: None
+                width: dp(50)
+                font_size: sp(22)
+                background_color: utils.get_color_from_hex("#BDBDBDFF")
+                background_normal: ""
+                on_release: root.go_back()
+            Label:
+                text: "Resultado"
+                font_size: sp(22)
+                bold: True
+                color: utils.get_color_from_hex("#2E7D32")
+
+        # ── Imagen analizada ──
+        Image:
+            source: root.image_path if root.image_path else ""
+            size_hint_y: None
+            height: dp(160)
+            fit_mode: "contain"
+
+        # ── Clase detectada ──
+        Label:
+            text: root.selected_class.upper() if root.selected_class else ""
+            font_size: sp(24)
+            bold: True
+            size_hint_y: None
+            height: dp(35)
+            color: utils.get_color_from_hex("#1B5E20")
+
+        Label:
+            text: root.confidence_text
+            font_size: sp(12)
+            size_hint_y: None
+            height: dp(20)
+            color: 0.5, 0.5, 0.5, 1
+
+        # ── Top 3 predicciones ──
+        Label:
+            text: "¿No es correcto? Elige otra opción:"
+            font_size: sp(12)
+            size_hint_y: None
+            height: dp(22)
+            color: 0.5, 0.5, 0.5, 1
+
+        BoxLayout:
+            size_hint_y: None
+            height: dp(40)
+            spacing: dp(8)
+            Button:
+                text: root.predictions[0]["food_class"] if len(root.predictions) > 0 else ""
+                font_size: sp(12)
+                background_color: utils.get_color_from_hex("#C8E6C9FF") if root.selected_class == (root.predictions[0]["food_class"] if len(root.predictions) > 0 else "") else utils.get_color_from_hex("#EEEEEEFF")
+                background_normal: ""
+                color: 0.1, 0.1, 0.1, 1
+                on_release: root.select_prediction(0)
+            Button:
+                text: root.predictions[1]["food_class"] if len(root.predictions) > 1 else ""
+                font_size: sp(12)
+                background_color: utils.get_color_from_hex("#C8E6C9FF") if root.selected_class == (root.predictions[1]["food_class"] if len(root.predictions) > 1 else "") else utils.get_color_from_hex("#EEEEEEFF")
+                background_normal: ""
+                color: 0.1, 0.1, 0.1, 1
+                on_release: root.select_prediction(1)
+            Button:
+                text: root.predictions[2]["food_class"] if len(root.predictions) > 2 else ""
+                font_size: sp(12)
+                background_color: utils.get_color_from_hex("#C8E6C9FF") if root.selected_class == (root.predictions[2]["food_class"] if len(root.predictions) > 2 else "") else utils.get_color_from_hex("#EEEEEEFF")
+                background_normal: ""
+                color: 0.1, 0.1, 0.1, 1
+                on_release: root.select_prediction(2)
+
+        # ── Selector de porción ──
+        Label:
+            text: "Tamaño de porción"
+            font_size: sp(13)
+            size_hint_y: None
+            height: dp(22)
+            color: 0.4, 0.4, 0.4, 1
+
+        BoxLayout:
+            size_hint_y: None
+            height: dp(40)
+            spacing: dp(8)
+            Button:
+                text: "Pequeña"
+                font_size: sp(13)
+                background_color: utils.get_color_from_hex("#C8E6C9FF") if root.portion == "pequeña" else utils.get_color_from_hex("#EEEEEEFF")
+                background_normal: ""
+                color: 0.1, 0.1, 0.1, 1
+                on_release: root.set_portion("pequeña")
+            Button:
+                text: "Mediana"
+                font_size: sp(13)
+                background_color: utils.get_color_from_hex("#C8E6C9FF") if root.portion == "mediana" else utils.get_color_from_hex("#EEEEEEFF")
+                background_normal: ""
+                color: 0.1, 0.1, 0.1, 1
+                on_release: root.set_portion("mediana")
+            Button:
+                text: "Grande"
+                font_size: sp(13)
+                background_color: utils.get_color_from_hex("#C8E6C9FF") if root.portion == "grande" else utils.get_color_from_hex("#EEEEEEFF")
+                background_normal: ""
+                color: 0.1, 0.1, 0.1, 1
+                on_release: root.set_portion("grande")
+
+        # ── Gramos personalizados ──
+        BoxLayout:
+            size_hint_y: None
+            height: dp(40)
+            spacing: dp(8)
+            TextInput:
+                text: root.custom_grams
+                on_text: root.custom_grams = self.text
+                hint_text: "Gramos exactos (opcional)"
+                input_filter: "float"
+                font_size: sp(14)
+                multiline: False
+                size_hint_x: 0.65
+            Button:
+                text: "Aplicar"
+                font_size: sp(13)
+                size_hint_x: 0.35
+                background_color: utils.get_color_from_hex("#455A64FF")
+                background_normal: ""
+                color: 1, 1, 1, 1
+                on_release: root.apply_custom_grams()
+
+        # ── Resultado nutricional ──
+        BoxLayout:
+            orientation: "vertical"
+            size_hint_y: None
+            height: dp(105)
+            padding: dp(12)
+            canvas.before:
+                Color:
+                    rgba: utils.get_color_from_hex("#E8F5E9FF")
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [dp(12)]
+
+            Label:
+                text: str(int(root.calories)) + " kcal"
+                font_size: sp(36)
+                bold: True
+                color: utils.get_color_from_hex("#1B5E20")
+
+            Label:
+                text: "~" + str(root.grams_display) + "g  |  P:" + str(root.protein) + "  C:" + str(root.carbs) + "  G:" + str(root.fat)
+                font_size: sp(13)
+                color: 0.4, 0.4, 0.4, 1
+
+        # ── Botones finales ──
+        BoxLayout:
+            size_hint_y: None
+            height: dp(50)
+            spacing: dp(10)
+            Button:
+                text: "Guardar" if not root.saved else "Guardado ✓"
+                font_size: sp(16)
+                background_color: utils.get_color_from_hex("#2E7D32FF") if not root.saved else utils.get_color_from_hex("#81C784FF")
+                background_normal: ""
+                color: 1, 1, 1, 1
+                on_release: root.save_result()
+            Button:
+                text: "Inicio"
+                font_size: sp(16)
+                background_color: utils.get_color_from_hex("#757575FF")
+                background_normal: ""
+                color: 1, 1, 1, 1
+                on_release: root.go_home()

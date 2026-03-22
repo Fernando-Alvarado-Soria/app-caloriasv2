@@ -1,0 +1,59 @@
+#:import utils kivy.utils
+
+<HistoryScreen>:
+    name: "history"
+
+    BoxLayout:
+        orientation: "vertical"
+        padding: dp(20)
+        spacing: dp(12)
+
+        # ── Header ──
+        BoxLayout:
+            size_hint_y: None
+            height: dp(50)
+            spacing: dp(10)
+            Button:
+                text: "<"
+                size_hint_x: None
+                width: dp(50)
+                font_size: sp(22)
+                background_color: utils.get_color_from_hex("#BDBDBDFF")
+                background_normal: ""
+                on_release: root.go_back()
+            Label:
+                text: "Historial"
+                font_size: sp(22)
+                bold: True
+                color: utils.get_color_from_hex("#2E7D32")
+
+        # ── Filtros ──
+        BoxLayout:
+            size_hint_y: None
+            height: dp(40)
+            spacing: dp(10)
+            Button:
+                text: "Hoy"
+                font_size: sp(14)
+                background_color: utils.get_color_from_hex("#C8E6C9FF")
+                background_normal: ""
+                color: 0.1, 0.1, 0.1, 1
+                on_release: root.show_today()
+            Button:
+                text: "Todo"
+                font_size: sp(14)
+                background_color: utils.get_color_from_hex("#E0E0E0FF")
+                background_normal: ""
+                color: 0.1, 0.1, 0.1, 1
+                on_release: root.show_all()
+
+        # ── Lista de comidas ──
+        ScrollView:
+            do_scroll_x: False
+
+            BoxLayout:
+                id: meals_list
+                orientation: "vertical"
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: dp(2)

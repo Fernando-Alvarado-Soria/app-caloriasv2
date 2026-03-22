@@ -1,0 +1,87 @@
+#:import utils kivy.utils
+
+<CaptureScreen>:
+    name: "capture"
+
+    BoxLayout:
+        orientation: "vertical"
+        padding: dp(20)
+        spacing: dp(15)
+
+        # ── Header ──
+        BoxLayout:
+            size_hint_y: None
+            height: dp(50)
+            spacing: dp(10)
+            Button:
+                text: "<"
+                size_hint_x: None
+                width: dp(50)
+                font_size: sp(22)
+                background_color: utils.get_color_from_hex("#BDBDBDFF")
+                background_normal: ""
+                on_release: root.go_back()
+            Label:
+                text: "Analizar comida"
+                font_size: sp(22)
+                bold: True
+                color: utils.get_color_from_hex("#2E7D32")
+
+        # ── Preview de imagen ──
+        BoxLayout:
+            orientation: "vertical"
+            size_hint_y: 1
+            padding: dp(10)
+            canvas.before:
+                Color:
+                    rgba: utils.get_color_from_hex("#F5F5F5FF")
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [dp(15)]
+
+            Image:
+                id: img_preview
+                source: root.image_path if root.image_path else ""
+                fit_mode: "contain"
+
+            Label:
+                text: root.status_text
+                font_size: sp(13)
+                size_hint_y: None
+                height: dp(30)
+                color: 0.5, 0.5, 0.5, 1
+
+        # ── Botones de captura ──
+        BoxLayout:
+            orientation: "horizontal"
+            size_hint_y: None
+            height: dp(55)
+            spacing: dp(10)
+
+            Button:
+                text: "Tomar foto"
+                font_size: sp(16)
+                background_color: utils.get_color_from_hex("#1565C0FF")
+                background_normal: ""
+                color: 1, 1, 1, 1
+                on_release: root.take_photo()
+
+            Button:
+                text: "Galería"
+                font_size: sp(16)
+                background_color: utils.get_color_from_hex("#6A1B9AFF")
+                background_normal: ""
+                color: 1, 1, 1, 1
+                on_release: root.select_from_gallery()
+
+        # ── Botón analizar ──
+        Button:
+            text: "Analizar"
+            font_size: sp(18)
+            size_hint_y: None
+            height: dp(55)
+            background_color: utils.get_color_from_hex("#2E7D32FF")
+            background_normal: ""
+            color: 1, 1, 1, 1
+            on_release: root.analyze()

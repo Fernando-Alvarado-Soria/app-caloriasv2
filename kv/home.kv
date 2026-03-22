@@ -1,0 +1,152 @@
+#:import utils kivy.utils
+
+<HomeScreen>:
+    name: "home"
+
+    BoxLayout:
+        orientation: "vertical"
+        padding: dp(20)
+        spacing: dp(15)
+
+        # ── Header ──
+        Label:
+            text: "CaloriasApp"
+            font_size: sp(28)
+            bold: True
+            size_hint_y: None
+            height: dp(50)
+            color: utils.get_color_from_hex("#2E7D32")
+
+        Label:
+            text: "Resumen de hoy"
+            font_size: sp(16)
+            size_hint_y: None
+            height: dp(30)
+            color: 0.4, 0.4, 0.4, 1
+
+        # ── Tarjeta de calorías totales ──
+        BoxLayout:
+            orientation: "vertical"
+            size_hint_y: None
+            height: dp(120)
+            padding: dp(15)
+            canvas.before:
+                Color:
+                    rgba: utils.get_color_from_hex("#E8F5E9FF")
+                RoundedRectangle:
+                    pos: self.pos
+                    size: self.size
+                    radius: [dp(15)]
+
+            Label:
+                text: str(int(root.total_calories))
+                font_size: sp(48)
+                bold: True
+                color: utils.get_color_from_hex("#1B5E20")
+
+            Label:
+                text: "kcal consumidas"
+                font_size: sp(14)
+                color: 0.4, 0.4, 0.4, 1
+
+        # ── Macronutrientes ──
+        BoxLayout:
+            orientation: "horizontal"
+            size_hint_y: None
+            height: dp(90)
+            spacing: dp(10)
+
+            # Proteínas
+            BoxLayout:
+                orientation: "vertical"
+                padding: dp(8)
+                canvas.before:
+                    Color:
+                        rgba: utils.get_color_from_hex("#E3F2FDFF")
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [dp(12)]
+                Label:
+                    text: str(round(root.total_protein, 1)) + "g"
+                    font_size: sp(22)
+                    bold: True
+                    color: utils.get_color_from_hex("#1565C0")
+                Label:
+                    text: "Proteína"
+                    font_size: sp(11)
+                    color: 0.4, 0.4, 0.4, 1
+
+            # Carbohidratos
+            BoxLayout:
+                orientation: "vertical"
+                padding: dp(8)
+                canvas.before:
+                    Color:
+                        rgba: utils.get_color_from_hex("#FFF3E0FF")
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [dp(12)]
+                Label:
+                    text: str(round(root.total_carbs, 1)) + "g"
+                    font_size: sp(22)
+                    bold: True
+                    color: utils.get_color_from_hex("#E65100")
+                Label:
+                    text: "Carbos"
+                    font_size: sp(11)
+                    color: 0.4, 0.4, 0.4, 1
+
+            # Grasas
+            BoxLayout:
+                orientation: "vertical"
+                padding: dp(8)
+                canvas.before:
+                    Color:
+                        rgba: utils.get_color_from_hex("#FCE4ECFF")
+                    RoundedRectangle:
+                        pos: self.pos
+                        size: self.size
+                        radius: [dp(12)]
+                Label:
+                    text: str(round(root.total_fat, 1)) + "g"
+                    font_size: sp(22)
+                    bold: True
+                    color: utils.get_color_from_hex("#C62828")
+                Label:
+                    text: "Grasa"
+                    font_size: sp(11)
+                    color: 0.4, 0.4, 0.4, 1
+
+        # ── Comidas registradas hoy ──
+        Label:
+            text: str(root.meals_count) + " comidas registradas hoy"
+            font_size: sp(13)
+            size_hint_y: None
+            height: dp(25)
+            color: 0.5, 0.5, 0.5, 1
+
+        # ── Spacer ──
+        Widget:
+
+        # ── Botones de acción ──
+        Button:
+            text: "Analizar comida"
+            font_size: sp(18)
+            size_hint_y: None
+            height: dp(55)
+            background_color: utils.get_color_from_hex("#2E7D32FF")
+            background_normal: ""
+            color: 1, 1, 1, 1
+            on_release: root.go_capture()
+
+        Button:
+            text: "Ver historial"
+            font_size: sp(16)
+            size_hint_y: None
+            height: dp(48)
+            background_color: utils.get_color_from_hex("#757575FF")
+            background_normal: ""
+            color: 1, 1, 1, 1
+            on_release: root.go_history()
