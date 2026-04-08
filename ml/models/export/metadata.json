@@ -2,8 +2,8 @@
   "model_name": "efficientnet_b0",
   "num_classes": 101,
   "image_size": 224,
-  "val_accuracy_top1": 57.7,
-  "epoch": 2,
+  "val_accuracy_top1": 84.89,
+  "epoch": 9,
   "classes": [
     "apple_pie",
     "baby_back_ribs",
