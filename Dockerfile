@@ -16,8 +16,8 @@ COPY app/ app/
 COPY ml/ ml/
 COPY server/ server/
 
-# Exponer puerto
+# Railway asigna un puerto dinámico via $PORT, default 8000
 EXPOSE 8000
 
-# Comando de inicio
-CMD ["uvicorn", "server.api:app", "--host", "0.0.0.0", "--port", "8000"]
+# Comando de inicio — usa $PORT de Railway o 8000 por defecto
+CMD uvicorn server.api:app --host 0.0.0.0 --port ${PORT:-8000}

@@ -42,6 +42,21 @@ app.add_middleware(
 )
 
 
+@app.get("/")
+async def root():
+    """Página principal de la API."""
+    return {
+        "app": "CaloriasApp API",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "endpoints": {
+            "predict": "POST /predict",
+            "health": "GET /health",
+            "classes": "GET /classes",
+        },
+    }
+
+
 @app.on_event("startup")
 async def startup_event():
     """Pre-cargar el modelo al iniciar el servidor."""
