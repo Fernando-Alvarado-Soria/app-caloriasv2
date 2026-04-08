@@ -1,0 +1,19 @@
+# No incluir en la imagen Docker
+__pycache__/
+*.pyc
+*.pyo
+.git/
+.gitignore
+*.md
+notebooks/
+ml/data/
+ml/models/*.pt
+ml/models/checkpoint_*.pt
+!ml/models/export/
+ml/logs/
+data/
+kv/
+main.py
+.env
+.venv/
+venv/

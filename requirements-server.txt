@@ -1,13 +1,12 @@
-kivy>=2.3.0
+# requirements solo para el servidor (sin Kivy, más liviano para deploy)
 pillow>=10.0.0
-plyer>=2.1.0
 requests>=2.31.0
 
-# ML — entrenamiento e inferencia
+# ML — inferencia
 torch>=2.0.0
 torchvision>=0.15.0
 
-# Server — API REST
+# Server
 fastapi>=0.100.0
 uvicorn[standard]>=0.23.0
 python-multipart>=0.0.6
