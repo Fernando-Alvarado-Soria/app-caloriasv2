@@ -2,10 +2,8 @@
 pillow>=10.0.0
 requests>=2.31.0
 
-# ML — inferencia (CPU-only, mucho más liviano para deploy)
---extra-index-url https://download.pytorch.org/whl/cpu
-torch
-torchvision
+# ML — torch ya se instala en el Dockerfile (CPU-only)
+# No incluir torch/torchvision aquí para evitar reinstalación
 
 # Server
 fastapi>=0.100.0
