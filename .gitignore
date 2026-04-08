@@ -24,5 +24,7 @@ bin/
 # ML — datos pesados y modelos
 ml/data/
 ml/models/*.pt
-ml/models/export/
+ml/models/export/*.pt
+!ml/models/export/model_scripted.pt
+!ml/models/export/metadata.json
 ml/logs/
