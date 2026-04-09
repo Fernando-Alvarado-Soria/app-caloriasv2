@@ -23,6 +23,7 @@ NUM_EPOCHS = 10
 LEARNING_RATE = 1e-3       # Para la cabeza nueva
 LR_BACKBONE = 1e-4         # Para fine-tuning del backbone (más bajo)
 WEIGHT_DECAY = 1e-4
+LABEL_SMOOTHING = 0.1      # Reduce overfitting en clasificación
 
 # ─── Transfer learning ───
 FREEZE_BACKBONE_EPOCHS = 3  # Entrenar solo la cabeza las primeras N épocas
@@ -33,6 +34,8 @@ IMAGE_SIZE = 224            # EfficientNet-B0 espera 224x224
 RANDOM_CROP_SCALE = (0.08, 1.0)
 COLOR_JITTER = 0.3
 RANDOM_ROTATION = 15
+RANDOM_ERASING_PROB = 0.25  # Borra parche aleatorio (fuerza al modelo a no depender de una sola zona)
+MIXUP_ALPHA = 0.2           # Mezcla pares de imágenes (regularización fuerte)
 
 # ─── Otros ───
 NUM_WORKERS = 2             # Workers para DataLoader

@@ -16,6 +16,7 @@ import os
 import sys
 import time
 import argparse
+import numpy as np
 
 import torch
 import torch.nn as nn
@@ -29,6 +30,7 @@ from ml.config import (
     BATCH_SIZE, NUM_EPOCHS, LEARNING_RATE, LR_BACKBONE, WEIGHT_DECAY,
     FREEZE_BACKBONE_EPOCHS, UNFREEZE_AFTER,
     IMAGE_SIZE, RANDOM_CROP_SCALE, COLOR_JITTER, RANDOM_ROTATION,
+    RANDOM_ERASING_PROB, MIXUP_ALPHA, LABEL_SMOOTHING,
     NUM_WORKERS, DEVICE, CHECKPOINT_EVERY, EARLY_STOP_PATIENCE,
 )
 
@@ -57,6 +59,7 @@ def build_transforms():
         ),
         transforms.ToTensor(),
         normalize,
+        transforms.RandomErasing(p=RANDOM_ERASING_PROB),
     ])
 
     val_transform = transforms.Compose([
@@ -126,7 +129,28 @@ def build_optimizer(model, epoch):
         ], weight_decay=WEIGHT_DECAY)
 
 
-def train_one_epoch(model, loader, criterion, optimizer, device, epoch):
+def mixup_data(x, y, alpha=0.2):
+    """Mixup: mezcla pares de imágenes y labels para regularización."""
+    if alpha > 0:
+        lam = np.random.beta(alpha, alpha)
+    else:
+        return x, y, y, 1.0
+
+    batch_size = x.size(0)
+    index = torch.randperm(batch_size, device=x.device)
+
+    mixed_x = lam * x + (1 - lam) * x[index]
+    y_a, y_b = y, y[index]
+    return mixed_x, y_a, y_b, lam
+
+
+def mixup_criterion(criterion, pred, y_a, y_b, lam):
+    """Loss para mixup: combinación ponderada de los dos labels."""
+    return lam * criterion(pred, y_a) + (1 - lam) * criterion(pred, y_b)
+
+
+def train_one_epoch(model, loader, criterion, optimizer, device, epoch,
+                    use_mixup=False):
     model.train()
     running_loss = 0.0
     correct = 0
@@ -135,9 +159,17 @@ def train_one_epoch(model, loader, criterion, optimizer, device, epoch):
     for batch_idx, (images, labels) in enumerate(loader):
         images, labels = images.to(device), labels.to(device)
 
-        optimizer.zero_grad()
-        outputs = model(images)
-        loss = criterion(outputs, labels)
+        if use_mixup and MIXUP_ALPHA > 0:
+            images, targets_a, targets_b, lam = mixup_data(
+                images, labels, MIXUP_ALPHA
+            )
+            optimizer.zero_grad()
+            outputs = model(images)
+            loss = mixup_criterion(criterion, outputs, targets_a, targets_b, lam)
+        else:
+            optimizer.zero_grad()
+            outputs = model(images)
+            loss = criterion(outputs, labels)
         loss.backward()
         optimizer.step()
 
@@ -238,7 +270,7 @@ def train(args):
 
     # ─── Modelo ───
     model = build_model(device)
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(label_smoothing=LABEL_SMOOTHING)
 
     # ─── Resumir desde checkpoint ───
     start_epoch = 0
@@ -290,9 +322,11 @@ def train(args):
             optimizer, T_max=len(train_loader), eta_min=1e-6
         )
 
-        # Train
+        # Train (mixup solo durante fine-tuning, no en head-only)
+        use_mixup = epoch >= FREEZE_BACKBONE_EPOCHS
         train_loss, train_acc = train_one_epoch(
-            model, train_loader, criterion, optimizer, device, epoch
+            model, train_loader, criterion, optimizer, device, epoch,
+            use_mixup=use_mixup
         )
         scheduler.step()
 
