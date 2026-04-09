@@ -1,7 +1,7 @@
 from kivy.uix.screenmanager import Screen
 from kivy.properties import (StringProperty, NumericProperty, ListProperty,
                               BooleanProperty)
-from app.services.inference import predict_food, is_model_loaded
+from app.services.inference import predict_food, is_model_loaded, get_inference_mode
 from app.nutrition.food_table import estimate_nutrition, get_food_classes
 from app.database.db import save_meal
 
@@ -34,7 +34,9 @@ class ResultScreen(Screen):
         self._run_prediction()
 
     def _run_prediction(self):
-        self.model_status = "IA" if is_model_loaded() else "Simulado"
+        mode = get_inference_mode()
+        mode_labels = {"nube": "IA (Nube)", "local": "IA (Local)", "simulado": "Simulado"}
+        self.model_status = mode_labels.get(mode, mode)
         results = predict_food(self.image_path)
         self.predictions = results
         if results:

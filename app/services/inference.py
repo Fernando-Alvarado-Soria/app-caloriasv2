@@ -1,9 +1,10 @@
 """
 Servicio de inferencia.
 
-Carga el modelo entrenado (TorchScript o state_dict) y ejecuta
-predicción real sobre imágenes. Si el modelo no está disponible,
-cae en modo simulado como fallback.
+Estrategia de predicción (en orden de prioridad):
+  1. API en la nube (Railway) — no necesita modelo local
+  2. Modelo local (TorchScript) — si existe en ml/models/export/
+  3. Modo simulado (aleatorio) — fallback de último recurso
 """
 
 import os
@@ -11,23 +12,34 @@ import json
 import random
 import logging
 
+import requests
 from PIL import Image
 
 logger = logging.getLogger(__name__)
 
-# ─── Rutas del modelo exportado ───
+# ─── Configuración de la API en la nube ───
+API_URL = os.environ.get(
+    "API_URL",
+    "https://app-caloriasv2-production.up.railway.app",
+)
+API_TIMEOUT = 15  # segundos
+
+# ─── Rutas del modelo exportado (local) ───
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _EXPORT_DIR = os.path.join(_ROOT, "ml", "models", "export")
 _SCRIPTED_PATH = os.path.join(_EXPORT_DIR, "model_scripted.pt")
 _META_PATH = os.path.join(_EXPORT_DIR, "metadata.json")
 
-# Estado global del modelo (singleton lazy)
+# Estado global del modelo local (singleton lazy)
 _model = None
 _classes = None
 _transform = None
 _device = None
 _model_loaded = False
 _load_attempted = False
+
+# Estado de la API en la nube
+_api_available = None  # None = no probado, True/False
 
 
 def _try_load_model():
@@ -78,18 +90,68 @@ def _try_load_model():
         return False
 
 
+def _check_api():
+    """Verifica si la API en la nube está disponible."""
+    global _api_available
+    if _api_available is not None:
+        return _api_available
+    try:
+        resp = requests.get(f"{API_URL}/health", timeout=5)
+        _api_available = resp.status_code == 200
+        if _api_available:
+            logger.info("API en la nube disponible: %s", API_URL)
+        return _api_available
+    except Exception:
+        _api_available = False
+        logger.info("API en la nube no disponible — usando modo local")
+        return False
+
+
+def _predict_cloud(image_path: str) -> list[dict] | None:
+    """Envía la imagen a la API en Railway y devuelve predicciones."""
+    try:
+        with open(image_path, "rb") as f:
+            files = {"file": (os.path.basename(image_path), f, "image/jpeg")}
+            resp = requests.post(
+                f"{API_URL}/predict",
+                files=files,
+                timeout=API_TIMEOUT,
+            )
+
+        if resp.status_code != 200:
+            logger.warning("API respondió con status %d", resp.status_code)
+            return None
+
+        data = resp.json()
+        return data.get("predictions", None)
+
+    except Exception as e:
+        logger.warning("Error conectando con la API: %s", e)
+        return None
+
+
 def predict_food(image_path: str) -> list[dict]:
     """
     Predice la clase de comida en la imagen.
     Devuelve top-3 clases con confianza.
 
-    Si el modelo está entrenado y exportado, usa inferencia real.
-    Si no, cae en modo simulado (aleatorio).
+    Orden de prioridad:
+      1. API en la nube (Railway)
+      2. Modelo local (TorchScript)
+      3. Modo simulado (aleatorio)
     """
+    # 1. Intentar API en la nube
+    if _check_api():
+        result = _predict_cloud(image_path)
+        if result:
+            return result
+
+    # 2. Intentar modelo local
     if _try_load_model():
         return _predict_real(image_path)
-    else:
-        return _predict_simulated()
+
+    # 3. Fallback simulado
+    return _predict_simulated()
 
 
 def _predict_real(image_path: str) -> list[dict]:
@@ -154,6 +216,17 @@ def _predict_simulated() -> list[dict]:
 
 
 def is_model_loaded() -> bool:
-    """Devuelve si el modelo real está disponible."""
+    """Devuelve si hay un modelo disponible (nube o local)."""
+    if _check_api():
+        return True
     _try_load_model()
     return _model_loaded
+
+
+def get_inference_mode() -> str:
+    """Devuelve el modo actual: 'nube', 'local' o 'simulado'."""
+    if _check_api():
+        return "nube"
+    if _try_load_model():
+        return "local"
+    return "simulado"
