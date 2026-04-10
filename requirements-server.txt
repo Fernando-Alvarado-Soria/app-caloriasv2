@@ -1,6 +1,7 @@
 # requirements solo para el servidor (sin Kivy, más liviano para deploy)
 pillow>=10.0.0
 requests>=2.31.0
+numpy>=1.24.0
 
 # ML — torch ya se instala en el Dockerfile (CPU-only)
 # No incluir torch/torchvision aquí para evitar reinstalación
