@@ -116,6 +116,28 @@ CLASS_MAP: dict[str, tuple[str, str | None]] = {
     "sashimi":                  ("Sashimi",             "sushi"),
     "takoyaki":                 ("Takoyaki",            "nuggets"),
     "tuna_tartare":             ("Tártara de atún",     "sushi"),
+
+    # ─── Clases mexicanas personalizadas ───
+    "caldo_de_pollo":           ("Caldo de pollo",      "caldo de pollo"),
+    "tacos_dorados":            ("Tacos dorados",       "tacos dorados"),
+    "sopes":                    ("Sopes",               "sopes"),
+    "tamales":                  ("Tamales",             "tamales"),
+    "pozole":                   ("Pozole",              "pozole"),
+    "chilaquiles":              ("Chilaquiles",         "chilaquiles"),
+    "gorditas":                 ("Gorditas",            "gorditas"),
+    "tlacoyos":                 ("Tlacoyos",            "tlacoyos"),
+    "elote":                    ("Elote",               "elote"),
+    "torta_mexicana":           ("Torta mexicana",      "torta mexicana"),
+    "molletes":                 ("Molletes",            "molletes"),
+    "huevos_rancheros":         ("Huevos rancheros",    "huevos rancheros"),
+    "arroz_rojo":               ("Arroz rojo",          "arroz rojo"),
+    "frijoles":                 ("Frijoles",            "frijoles"),
+    "carne_en_su_jugo":         ("Carne en su jugo",    "carne en su jugo"),
+    "birria":                   ("Birria",              "birria"),
+    "menudo":                   ("Menudo",              "menudo"),
+    "flautas":                  ("Flautas",             "flautas"),
+    "mole":                     ("Mole",                "mole"),
+    "chiles_rellenos":          ("Chiles rellenos",     "chiles rellenos"),
 }
 
 
