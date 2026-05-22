@@ -11,6 +11,12 @@ Usa **Kivy** como interfaz, **EfficientNet-B0** (transfer learning con Food-101)
 - **Dataset**: [Food-101](https://data.vision.ee.ethz.ch/cvl/datasets_extra/food-101/) (101 clases, 101k imágenes)
 - **Escalado futuro**: FastAPI + PostgreSQL
 
+## Compartir API
+
+Si quieres compartir tu endpoint para que otras apps consuman el modelo entrenado, revisa esta guia corta:
+
+- [README_API_COMPARTIR.md](README_API_COMPARTIR.md)
+
 ---
 
 ## Requisitos previos
