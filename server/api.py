@@ -81,8 +81,20 @@ async def health():
 @app.get("/classes")
 async def get_classes():
     """Devuelve la lista de clases que el modelo puede reconocer."""
-    from ml.class_mapping import CLASS_MAP, food101_to_spanish
-    classes = {k: food101_to_spanish(k) for k in CLASS_MAP}
+    import json as _json
+    meta_path = os.path.join(
+        os.path.dirname(__file__), "..", "ml", "models", "export", "metadata.json"
+    )
+    if os.path.exists(meta_path):
+        with open(meta_path, "r") as f:
+            meta = _json.load(f)
+        model_classes = meta.get("classes", [])
+    else:
+        from ml.class_mapping import CLASS_MAP
+        model_classes = list(CLASS_MAP.keys())
+
+    from ml.class_mapping import food101_to_spanish
+    classes = {k: food101_to_spanish(k) for k in model_classes}
     return {"num_classes": len(classes), "classes": classes}
 
 

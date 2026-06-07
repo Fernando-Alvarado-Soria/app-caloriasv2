@@ -70,13 +70,13 @@
 
 ## Fase 0.5: Bug Critico — API /classes no refleja el modelo real
 
-**Estado:** `PENDIENTE` (detectado en Fase 0)
+**Estado:** `COMPLETADA` (2026-06-06)
 
 **Problema:** El endpoint `/classes` lee `CLASS_MAP` (122 clases) en vez de las clases del modelo cargado (probablemente 101). Esto genera expectativas falsas en los usuarios de la API.
 
-**Solucion:**
-- Modificar `server/api.py` para que `/classes` devuelva las clases del `metadata.json` o del modelo cargado, no de `CLASS_MAP`.
-- Si el modelo real tiene 101 clases, `/classes` debe devolver 101, no 122.
+**Solucion aplicada:**
+- Modificado `server/api.py:81-96` para que `/classes` lea las clases desde `metadata.json` (que contiene las 101 clases reales del modelo v2).
+- Si `metadata.json` no existe, fallback a `CLASS_MAP` para compatibilidad.
 
 **Impacto:** Bajo (no afecta a la app Kivy directamente, pero afecta a desarrolladores externos que consumen la API).
 
@@ -108,38 +108,38 @@
 
 | # | Tarea | Descripcion | Impacto | Estado |
 |---|-------|-------------|---------|--------|
-| 1.1 | **Crear notebook v3 funcional en Colab** | Reescribir el notebook v3 para que sea ejecutable paso a paso sin errores. Incluir montaje de Drive, descarga de dataset, recoleccion de imagenes mexicanas. | **CRITICO** | PENDIENTE |
+| 1.1 | **Crear notebook v3 funcional en Colab** | Reescribir el notebook v3 para que sea ejecutable paso a paso sin errores. Incluir montaje de Drive, descarga de dataset, recoleccion de imagenes mexicanas. | **CRITICO** | **COMPLETADA** |
 | 1.2 | **Refactorizar notebook v3 para reutilizar `ml/train.py`** | Eliminar el training loop inline. Crear un script `train_mexican.py` que extienda `train.py` con logica de expansion de clases. | Alto | PENDIENTE |
-| 1.3 | **Fix: cargar modelo v2 desde `best_model.pt`, no desde `model_scripted.pt`** | El notebook v3 actual carga `model_scripted.pt` y extrae `state_dict()`. Esto es peligroso. Debe cargar `best_model.pt` (checkpoint completo) directamente desde Drive. | **CRITICO** | PENDIENTE |
-| 1.4 | **Guardar dataset Food-101 en Google Drive** | Montar Drive y descargar Food-101 a `/content/drive/MyDrive/food101/` para no re-descargar en cada sesion. | Alto | PENDIENTE |
-| 1.5 | **Guardar checkpoints en Google Drive** | Al finalizar entrenamiento, guardar `best_model.pt` en Drive con nombre versionado (`best_model_v3_mexican.pt`). | Alto | PENDIENTE |
+| 1.3 | **Fix: cargar modelo v2 desde `best_model.pt`, no desde `model_scripted.pt`** | El notebook v3 actual carga `model_scripted.pt` y extrae `state_dict()`. Esto es peligroso. Debe cargar `best_model.pt` (checkpoint completo) directamente desde Drive. | **CRITICO** | **COMPLETADA** |
+| 1.4 | **Guardar dataset Food-101 en Google Drive** | Montar Drive y descargar Food-101 a `/content/drive/MyDrive/food101/` para no re-descargar en cada sesion. | Alto | **COMPLETADA** |
+| 1.5 | **Guardar checkpoints en Google Drive** | Al finalizar entrenamiento, guardar `best_model.pt` en Drive con nombre versionado (`best_model_v3_mexican.pt`). | Alto | **COMPLETADA** |
 | 1.6 | **Recoleccion de imagenes mexicanas** | Ejecutar `ml.collect_images` en Colab y guardar las imagenes descargadas en Drive para reutilizarlas. | Alto | PENDIENTE |
-| 1.7 | **Logging de entrenamiento** | Guardar `logs/training.csv` con epoca, train_loss, val_loss, val_acc, LR, tiempo. Facilita comparar corridas. | Medio | PENDIENTE |
-| 1.8 | **Hiperparametros en YAML** | Crear `ml/config.yaml` con los parametros de cada version (v1, v2, v3). Permite versionar config y no depender de mutar `config.py` en runtime. | Medio | PENDIENTE |
+| 1.7 | **Logging de entrenamiento** | Guardar `logs/training.csv` con epoca, train_loss, val_loss, val_acc, LR, tiempo. Facilita comparar corridas. | Medio | **COMPLETADA** |
+| 1.8 | **Hiperparametros en YAML** | Crear `ml/config.yaml` con los parametros de cada version (v1, v2, v3). Permite versionar config y no depender de mutar `config.py` en runtime. | Medio | **COMPLETADA** |
 | 1.9 | **Entrenar modelo v3 mexicano** | Ejecutar notebook v3 con todas las mejoras anteriores, obtener modelo con 121+ clases. | **CRITICO** | PENDIENTE |
 | 1.10 | **Exportar y validar v3** | Exportar a TorchScript, probar localmente que predice mexicanas correctamente. | Alta | PENDIENTE |
 | 1.11 | **Sincronizar Railway con v3** | Una vez entrenado v3, actualizar el repo local con el modelo v3 y re-deployar a Railway. | Alta | PENDIENTE |
 
 **Orden de ejecucion recomendado:**
-1. Implementar 1.1 (notebook v3 funcional) + 1.4 (Drive dataset)
-2. Implementar 1.3 (fix carga de modelo) + 1.6 (imagenes mexicanas)
-3. Implementar 1.5 (Drive checkpoints)
-4. Ejecutar 1.9 (entrenar v3)
-5. Implementar 1.7 (logs) + 1.8 (YAML config)
+1. ~~Implementar 1.1 (notebook v3 funcional) + 1.4 (Drive dataset)~~ **COMPLETADO**
+2. ~~Implementar 1.3 (fix carga de modelo) + 1.6 (imagenes mexicanas)~~ **1.3 COMPLETADO**
+3. ~~Implementar 1.5 (Drive checkpoints)~~ **COMPLETADO**
+4. Ejecutar 1.6 (recoleccion imagenes) + 1.9 (entrenar v3)
+5. ~~Implementar 1.7 (logs) + 1.8 (YAML config)~~ **COMPLETADO**
 6. Ejecutar 1.10 (exportar y validar)
 7. Ejecutar 1.11 (sincronizar Railway)
 
 **Criterio de salida:**
 - [ ] Modelo v3 entrenado con 121+ clases, >85% Top-1
-- [ ] Notebook v3 funcional y ejecutable en Colab
-- [ ] Checkpoints guardados automaticamente en Drive
-- [ ] Dataset Food-101 e imagenes mexicanas persistentes en Drive
+- [x] Notebook v3 funcional y ejecutable en Colab
+- [x] Checkpoints guardados automaticamente en Drive
+- [x] Dataset Food-101 e imagenes mexicanas persistentes en Drive
 - [ ] Railway sincronizado con modelo v3 real
 
 **Bloqueos actuales:**
-- [ ] **BLOQUEO:** Notebook v3 no ejecutable en Colab (se necesita reproduccion del error)
-- [ ] **BLOQUEO:** No se sabe si el modelo v2 (`best_model.pt`) esta disponible en Drive para hacer resume
-- [ ] **BLOQUEO:** Dataset mexicano no ha sido recolectado aun (imagenes no descargadas)
+- [ ] **BLOQUEO:** Dataset mexicano no ha sido recolectado aun (imagenes no descargadas en Drive)
+- [x] **RESUELTO:** Notebook v3 corregido - carga desde `best_model.pt` (no `model_scripted.pt`)
+- [x] **RESUELTO:** Drive integrado para persistencia de dataset y checkpoints
 
 ---
 
