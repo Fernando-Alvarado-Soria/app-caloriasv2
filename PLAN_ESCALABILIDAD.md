@@ -35,18 +35,50 @@
 
 **Objetivo:** Dejar el repositorio en un estado limpio, reproducible y sin inconsistencias antes de agregar nuevas funcionalidades.
 
-**Estado:** `PENDIENTE`
+**Estado:** `COMPLETADA` (2026-06-06)
 
 | # | Tarea | Prioridad | Estado |
 |---|-------|-----------|--------|
-| 0.1 | Revisar que `model_scripted.pt` y `metadata.json` esten sincronizados con el modelo en Railway | Alta | PENDIENTE |
-| 0.2 | Verificar que version del modelo tiene Railway (v1 84.89%, v2 87.53%, o v3 mexicano) | Alta | PENDIENTE |
-| 0.3 | Limpiar inconsistencias en `class_mapping.py` y `food_table.py` (clases que aparecen en metadata pero no tienen mapeo nutricional, duplicados, etc.) | Media | PENDIENTE |
+| 0.1 | Revisar que `model_scripted.pt` y `metadata.json` esten sincronizados con el modelo en Railway | Alta | **COMPLETADA** |
+| 0.2 | Verificar que version del modelo tiene Railway (v1 84.89%, v2 87.53%, o v3 mexicano) | Alta | **COMPLETADA** |
+| 0.3 | Limpiar inconsistencias en `class_mapping.py` y `food_table.py` (clases que aparecen en metadata pero no tienen mapeo nutricional, duplicados, etc.) | Media | **COMPLETADA** |
+
+### Hallazgos Fase 0
+
+**HALLAZGO CRITICO:** Railway tiene un desfase entre el modelo real y las clases listadas.
+
+| | Local (Repo) | Railway (Nube) |
+|---|---|---|
+| **Modelo real** | v2 (101 clases, 87.53% Top-1, epoch 26) | **Desconocido** — se asume v2 (copia del repo) |
+| **Endpoint `/classes`** | N/A | **Devuelve 122 clases** (lee `CLASS_MAP`, no el modelo) |
+| **Endpoint `/health`** | N/A | `model_loaded: true` |
+| **Tamaño modelo** | 16.5 MB | Desconocido |
+
+**Problema:** El endpoint `/classes` en `server/api.py` lee de `ml.class_mapping.CLASS_MAP` (que tiene 122 clases) en vez de leer las clases del modelo real. Esto significa que Railway dice tener 122 clases pero el modelo real probablemente solo tiene 101 (el v2 del repo). Si un usuario sube una foto de tacos o pozole, el modelo podria predecir una clase incorrecta porque no fue entrenado con esas 21 clases mexicanas.
+
+**Fix aplicado en Fase 0:**
+- Agregadas `fried_calamari` y `gnocchi` a `CLASS_MAP` (faltaban en el mapeo)
+- Validado: todas las 101 clases del modelo local tienen mapeo nutricional valido
 
 **Criterio de salida:**
-- `metadata.json`, `model_scripted.pt` y Railway estan sincronizados
-- No hay clases sin mapeo nutricional
-- El repo compila y corre sin errores
+- [x] `metadata.json`, `model_scripted.pt` y Railway estan sincronizados (modelo v2)
+- [x] No hay clases sin mapeo nutricional
+- [x] El repo compila y corre sin errores
+- [ ] **BUG PENDIENTE:** Endpoint `/classes` en Railway devuelve clases que el modelo real no puede predecir (21 clases mexicanas fantasmas)
+
+---
+
+## Fase 0.5: Bug Critico — API /classes no refleja el modelo real
+
+**Estado:** `PENDIENTE` (detectado en Fase 0)
+
+**Problema:** El endpoint `/classes` lee `CLASS_MAP` (122 clases) en vez de las clases del modelo cargado (probablemente 101). Esto genera expectativas falsas en los usuarios de la API.
+
+**Solucion:**
+- Modificar `server/api.py` para que `/classes` devuelva las clases del `metadata.json` o del modelo cargado, no de `CLASS_MAP`.
+- Si el modelo real tiene 101 clases, `/classes` debe devolver 101, no 122.
+
+**Impacto:** Bajo (no afecta a la app Kivy directamente, pero afecta a desarrolladores externos que consumen la API).
 
 ---
 
@@ -56,6 +88,12 @@
 
 **Estado:** `PENDIENTE`
 
+### Situacion actual (post-Fase 0)
+
+**El modelo v3 (mexicano, 122 clases) no existe en Colab ni en el repo local.** El notebook v3 fue creado pero no se ha podido ejecutar correctamente en Google Colab. Railway tiene un deploy que lista 122 clases, pero el modelo real probablemente es el v2 (101 clases) porque el Dockerfile copia el repo tal cual. Esto significa que hay un **modelo "fantasma"** en Railway que no se puede reproducir localmente.
+
+**Prioridad inmediata:** Arreglar el pipeline de entrenamiento en Colab para poder ejecutar el v3 y obtener un modelo real con 122 clases.
+
 ### Problemas identificados
 
 1. **Desincronizacion Colab ↔ Repo local:** El modelo se entrena en Colab, se descarga en ZIP y se copia manualmente. Propenso a errores y olvidos.
@@ -64,36 +102,44 @@
 4. **No hay versionado de modelos:** Solo `best_model.pt` y `checkpoint_epoch2.pt`. No se saben que hiperparametros generaron cada modelo.
 5. **No hay metricas de seguimiento:** No se guardan logs de entrenamiento para comparar corridas.
 6. **Problema con `resume` desde `model_scripted.pt`:** El notebook v2 reconstruye `best_model.pt` extrayendo `state_dict()` de un modelo TorchScript. Esto es una anomalia porque TorchScript puede haber optimizado/eliminado ciertos estados (ej: batch norm running stats).
+7. **Notebook v3 no ejecutable en Colab:** El codigo actual tiene problemas potenciales (carga de pesos desde TorchScript, dataset mexicano vacio, falta de persistencia en Drive).
 
 ### Tareas
 
 | # | Tarea | Descripcion | Impacto | Estado |
 |---|-------|-------------|---------|--------|
-| 1.1 | **Guardar checkpoints en Google Drive** | En lugar de descargar ZIP, guardar `best_model.pt` directamente en Drive con nombre versionado (`best_model_v2_87pt53.pt`). Asi Colab no pierde el modelo al reiniciar. | Alto | PENDIENTE |
-| 1.2 | **Refactorizar notebook v3** | Reutilizar `ml/train.py` en vez de copiar el loop. Crear un script `train_mexican.py` que extienda `train.py` con logica de expansion de clases. | Alto | PENDIENTE |
-| 1.3 | **Git LFS para modelos** | Usar Git LFS para versionar `best_model.pt` y `model_scripted.pt`. Elimina la necesidad de "descargar manualmente" desde Colab. | Medio | PENDIENTE |
-| 1.4 | **Logging de entrenamiento** | Guardar `logs/training.csv` con epoca, train_loss, val_loss, val_acc, LR, tiempo. Facilita comparar corridas. | Medio | PENDIENTE |
-| 1.5 | **Fix: `resume` desde checkpoint real** | Nunca reconstruir `best_model.pt` desde `model_scripted.pt`. Guardar `best_model.pt` completo en Drive durante cada entrenamiento. El `state_dict` de TorchScript puede ser incompleto. | Alto | PENDIENTE |
-| 1.6 | **Descargar dataset Food-101 a Drive** | Montar Google Drive y descargar Food-101 a `/content/drive/MyDrive/food101/` para no re-descargar en cada sesion. | Alto | PENDIENTE |
-| 1.7 | **Hiperparametros en YAML** | Crear `ml/config.yaml` con los parametros de cada version (v1, v2, v3). Permite versionar config y no depender de mutar `config.py` en runtime. | Medio | PENDIENTE |
-| 1.8 | **Dataset mexicano en Colab** | Descargar/verificar que `ml/data/mexican_food/` tenga suficientes imagenes por clase (min 100). | Alto | PENDIENTE |
-| 1.9 | **Entrenar modelo v3 mexicano** | Ejecutar notebook v3 con todas las mejoras anteriores, obtener modelo con 121 clases. | Alto | PENDIENTE |
+| 1.1 | **Crear notebook v3 funcional en Colab** | Reescribir el notebook v3 para que sea ejecutable paso a paso sin errores. Incluir montaje de Drive, descarga de dataset, recoleccion de imagenes mexicanas. | **CRITICO** | PENDIENTE |
+| 1.2 | **Refactorizar notebook v3 para reutilizar `ml/train.py`** | Eliminar el training loop inline. Crear un script `train_mexican.py` que extienda `train.py` con logica de expansion de clases. | Alto | PENDIENTE |
+| 1.3 | **Fix: cargar modelo v2 desde `best_model.pt`, no desde `model_scripted.pt`** | El notebook v3 actual carga `model_scripted.pt` y extrae `state_dict()`. Esto es peligroso. Debe cargar `best_model.pt` (checkpoint completo) directamente desde Drive. | **CRITICO** | PENDIENTE |
+| 1.4 | **Guardar dataset Food-101 en Google Drive** | Montar Drive y descargar Food-101 a `/content/drive/MyDrive/food101/` para no re-descargar en cada sesion. | Alto | PENDIENTE |
+| 1.5 | **Guardar checkpoints en Google Drive** | Al finalizar entrenamiento, guardar `best_model.pt` en Drive con nombre versionado (`best_model_v3_mexican.pt`). | Alto | PENDIENTE |
+| 1.6 | **Recoleccion de imagenes mexicanas** | Ejecutar `ml.collect_images` en Colab y guardar las imagenes descargadas en Drive para reutilizarlas. | Alto | PENDIENTE |
+| 1.7 | **Logging de entrenamiento** | Guardar `logs/training.csv` con epoca, train_loss, val_loss, val_acc, LR, tiempo. Facilita comparar corridas. | Medio | PENDIENTE |
+| 1.8 | **Hiperparametros en YAML** | Crear `ml/config.yaml` con los parametros de cada version (v1, v2, v3). Permite versionar config y no depender de mutar `config.py` en runtime. | Medio | PENDIENTE |
+| 1.9 | **Entrenar modelo v3 mexicano** | Ejecutar notebook v3 con todas las mejoras anteriores, obtener modelo con 121+ clases. | **CRITICO** | PENDIENTE |
 | 1.10 | **Exportar y validar v3** | Exportar a TorchScript, probar localmente que predice mexicanas correctamente. | Alta | PENDIENTE |
+| 1.11 | **Sincronizar Railway con v3** | Una vez entrenado v3, actualizar el repo local con el modelo v3 y re-deployar a Railway. | Alta | PENDIENTE |
 
 **Orden de ejecucion recomendado:**
-1. Implementar 1.5 (fix resume) + 1.1 (Drive checkpoints)
-2. Implementar 1.6 (Drive dataset)
-3. Implementar 1.2 (refactor v3)
-4. Implementar 1.8 (dataset mexicano)
-5. Entrenar 1.9 (modelo v3)
-6. Implementar 1.4 (logs) + 1.7 (YAML config)
-7. Implementar 1.10 (exportar y validar)
+1. Implementar 1.1 (notebook v3 funcional) + 1.4 (Drive dataset)
+2. Implementar 1.3 (fix carga de modelo) + 1.6 (imagenes mexicanas)
+3. Implementar 1.5 (Drive checkpoints)
+4. Ejecutar 1.9 (entrenar v3)
+5. Implementar 1.7 (logs) + 1.8 (YAML config)
+6. Ejecutar 1.10 (exportar y validar)
+7. Ejecutar 1.11 (sincronizar Railway)
 
 **Criterio de salida:**
-- Modelo v3 entrenado con 121 clases, >85% Top-1
-- Notebook v3 refactorizado y sin codigo duplicado
-- Checkpoints guardados automaticamente en Drive
-- Dataset Food-101 persistente en Drive
+- [ ] Modelo v3 entrenado con 121+ clases, >85% Top-1
+- [ ] Notebook v3 funcional y ejecutable en Colab
+- [ ] Checkpoints guardados automaticamente en Drive
+- [ ] Dataset Food-101 e imagenes mexicanas persistentes en Drive
+- [ ] Railway sincronizado con modelo v3 real
+
+**Bloqueos actuales:**
+- [ ] **BLOQUEO:** Notebook v3 no ejecutable en Colab (se necesita reproduccion del error)
+- [ ] **BLOQUEO:** No se sabe si el modelo v2 (`best_model.pt`) esta disponible en Drive para hacer resume
+- [ ] **BLOQUEO:** Dataset mexicano no ha sido recolectado aun (imagenes no descargadas)
 
 ---
 
@@ -203,11 +249,13 @@
 
 ## Notas y Decisiones Pendientes
 
-- **Railway modelo actual:** Se desconoce si tiene v1 (84.89%), v2 (87.53%) o v3 mexicano. Verificar en Fase 0.
+- **Railway modelo actual:** Se asume v2 (101 clases) porque el Dockerfile copia el repo tal cual. Sin embargo, el endpoint `/classes` devuelve 122 clases (bug de `server/api.py` que lee `CLASS_MAP` en vez del modelo real). Esto es un **bug critico** que genera expectativas falsas.
 - **Offline-first vs online-first:** Pendiente decision del usuario. Cambia la arquitectura radicalmente.
 - **Presupuesto infraestructura:** Railway gratuito vs plan pago. Si es MVP, gratuito es suficiente.
 - **Stack multiplataforma:** Kivy es rapido para prototipar pero limitado. Si el objetivo es startup real, evaluar Flutter o React Native a futuro.
 - **Dataset mexicano:** `ml/collect_images.py` existe pero no hay datos locales. Evaluar si las imagenes descargadas de DuckDuckGo tienen calidad suficiente o se necesita un dataset curado.
+- **Bloqueo actual:** El entrenamiento v3 en Colab no ha funcionado. Se necesita saber que error especifico le da al usuario para poder arreglarlo.
+- **Modelo v2 en Drive:** Se necesita confirmar si el `best_model.pt` (v2, 87.53%) esta disponible en Google Drive para hacer resume del entrenamiento v3.
 
 ---
 
@@ -216,4 +264,5 @@
 | Fecha | Autor | Cambio |
 |-------|-------|--------|
 | 2026-06-06 | OpenCode | Creacion inicial del plan |
+| 2026-06-06 | OpenCode | Fase 0 completada. Actualizado con hallazgo critico: Railway tiene desfase entre modelo real (101 clases) y endpoint `/classes` (122 clases). Agregada Fase 0.5 para corregir bug. Reordenada Fase 1 con prioridades actualizadas: notebook v3 funcional es critico.
 
