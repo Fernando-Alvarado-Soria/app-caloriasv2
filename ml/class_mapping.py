@@ -34,6 +34,8 @@ CLASS_MAP: dict[str, tuple[str, str | None]] = {
     "omelette":                 ("Omelette",            "huevos revueltos"),
     "pancakes":                 ("Pancakes",            "pancakes"),
     "french_toast":             ("Pan francés",         "pan tostado"),
+    "fried_calamari":           ("Calamares fritos",    "pescado frito"),
+    "gnocchi":                  ("Gnocchi",             "spaghetti"),
     "donuts":                   ("Dona",                "dona"),
     "churros":                  ("Churros",             "churros"),
     "ice_cream":                ("Helado",              "helado"),
