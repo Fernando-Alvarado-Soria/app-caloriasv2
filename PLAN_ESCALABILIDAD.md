@@ -140,6 +140,35 @@
 - [ ] **BLOQUEO:** Dataset mexicano no ha sido recolectado aun (imagenes no descargadas en Drive)
 - [x] **RESUELTO:** Notebook v3 corregido - carga desde `best_model.pt` (no `model_scripted.pt`)
 - [x] **RESUELTO:** Drive integrado para persistencia de dataset y checkpoints
+- [x] **RESUELTO:** Notebook Kaggle creado - alternativa a Colab
+
+---
+
+## Fase 1.5: Migración a Kaggle Notebooks
+
+**Estado:** `EN PROGRESO` (2026-06-06)
+
+**Problema:** El entrenamiento en Google Colab no ha funcionado después de múltiples intentos.
+
+**Solución:** Migrar a Kaggle Notebooks que ofrece:
+- GPU T4 gratis (30 hrs/semana)
+- Dataset Food-101 ya disponible (no hay que descargar 5GB)
+- Mejor persistencia de outputs
+- No requiere Google Drive
+
+**Archivos creados:**
+- `notebooks/train_kaggle_v3_mexican.ipynb` - Notebook adaptado para Kaggle
+
+**Pasos para ejecutar:**
+1. Ejecutar localmente `python -m ml.collect_images` para obtener imágenes mexicanas
+2. Subir `ml/data/mexican_food/` a Kaggle como dataset privado
+3. Crear notebook en Kaggle con GPU T4
+4. Activar Internet en settings
+5. Agregar datasets: `kmader/food41` + tu dataset mexicano
+6. Actualizar `MEXICAN_FOOD_SLUG` en el notebook
+7. Ejecutar todo (~1-2 horas)
+8. Descargar modelo desde Output tab
+9. Copiar a repo y deployar a Railway
 
 ---
 
