@@ -45,72 +45,85 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "mex
 
 def download_images_ddg(query: str, max_images: int, output_dir: str):
     """Descarga imágenes usando DuckDuckGo (sin API key)."""
-    from duckduckgo_search import DDGS
+    try:
+        from ddgs import DDGS
+    except ImportError:
+        from duckduckgo_search import DDGS
 
     os.makedirs(output_dir, exist_ok=True)
     existing = len([f for f in os.listdir(output_dir) if f.endswith(('.jpg', '.jpeg', '.png'))])
 
     if existing >= max_images:
-        print(f"  Ya tiene {existing} imágenes, saltando.")
+        print(f"  Ya tiene {existing} imagenes, saltando.")
         return existing
 
     needed = max_images - existing
-    print(f"  Descargando {needed} imágenes (ya hay {existing})...")
+    print(f"  Descargando {needed} imagenes (ya hay {existing})...")
 
     downloaded = 0
-    try:
-        with DDGS() as ddgs:
-            results = ddgs.images(query, max_results=needed + 50)  # extras por si fallan
-            for r in results:
-                if downloaded >= needed:
-                    break
-                url = r.get("image", "")
-                if not url:
-                    continue
-                try:
-                    resp = requests.get(url, timeout=10, stream=True)
-                    if resp.status_code != 200:
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            with DDGS() as ddgs:
+                results = ddgs.images(query, max_results=needed + 50)  # extras por si fallan
+                for r in results:
+                    if downloaded >= needed:
+                        break
+                    url = r.get("image", "")
+                    if not url:
                         continue
-                    content_type = resp.headers.get("content-type", "")
-                    if "image" not in content_type:
+                    try:
+                        resp = requests.get(url, timeout=10, stream=True)
+                        if resp.status_code != 200:
+                            continue
+                        content_type = resp.headers.get("content-type", "")
+                        if "image" not in content_type:
+                            continue
+
+                        # Nombre unico basado en hash del URL
+                        ext = ".jpg"
+                        if "png" in content_type:
+                            ext = ".png"
+                        fname = hashlib.md5(url.encode()).hexdigest()[:12] + ext
+                        fpath = os.path.join(output_dir, fname)
+
+                        if os.path.exists(fpath):
+                            continue
+
+                        with open(fpath, "wb") as f:
+                            for chunk in resp.iter_content(8192):
+                                f.write(chunk)
+
+                        # Verificar que es imagen valida
+                        from PIL import Image
+                        img = Image.open(fpath)
+                        img.verify()
+
+                        downloaded += 1
+                        if downloaded % 20 == 0:
+                            print(f"    {downloaded}/{needed}")
+
+                    except Exception:
+                        # Eliminar archivo corrupto
+                        if os.path.exists(fpath):
+                            os.remove(fpath)
                         continue
 
-                    # Nombre único basado en hash del URL
-                    ext = ".jpg"
-                    if "png" in content_type:
-                        ext = ".png"
-                    fname = hashlib.md5(url.encode()).hexdigest()[:12] + ext
-                    fpath = os.path.join(output_dir, fname)
+                    time.sleep(0.5)  # Rate limiting
 
-                    if os.path.exists(fpath):
-                        continue
+            break  # Si llega aqui, la busqueda fue exitosa
 
-                    with open(fpath, "wb") as f:
-                        for chunk in resp.iter_content(8192):
-                            f.write(chunk)
-
-                    # Verificar que es imagen válida
-                    from PIL import Image
-                    img = Image.open(fpath)
-                    img.verify()
-
-                    downloaded += 1
-                    if downloaded % 20 == 0:
-                        print(f"    {downloaded}/{needed}")
-
-                except Exception:
-                    # Eliminar archivo corrupto
-                    if os.path.exists(fpath):
-                        os.remove(fpath)
-                    continue
-
-                time.sleep(0.2)  # Rate limiting
-
-    except Exception as e:
-        print(f"  Error en búsqueda: {e}")
+        except Exception as e:
+            if "403" in str(e) and attempt < max_retries - 1:
+                wait_time = 30 * (attempt + 1)
+                print(f"  Rate limit detectado. Esperando {wait_time}s antes de reintentar...")
+                time.sleep(wait_time)
+            else:
+                print(f"  Error en busqueda: {e}")
+                break
 
     total = existing + downloaded
-    print(f"  Total: {total} imágenes")
+    print(f"  Total: {total} imagenes")
     return total
 
 
@@ -125,20 +138,23 @@ def collect_all(classes: dict = None, per_class: int = IMAGES_PER_CLASS):
     print()
 
     stats = {}
-    for class_name, search_query in classes.items():
+    for idx, (class_name, search_query) in enumerate(classes.items()):
         print(f"[{class_name}] buscando: '{search_query}'")
         output_dir = os.path.join(DATA_DIR, class_name)
         count = download_images_ddg(search_query, per_class, output_dir)
         stats[class_name] = count
         print()
+        # Pausa entre clases para evitar rate limiting
+        if idx < len(classes) - 1:
+            time.sleep(15)
 
     # Resumen
     print("=" * 50)
-    print("RESUMEN DE RECOLECCIÓN")
+    print("RESUMEN DE RECOLECCION")
     print("=" * 50)
     for cls, count in stats.items():
-        status = "✓" if count >= per_class * 0.7 else "⚠ POCAS"
-        print(f"  {cls:<25} {count:>4} imágenes  {status}")
+        status = "OK" if count >= per_class * 0.7 else "POCAS"
+        print(f"  {cls:<25} {count:>4} imagenes  {status}")
 
     total = sum(stats.values())
     print(f"\nTotal: {total} imágenes en {len(stats)} clases")
