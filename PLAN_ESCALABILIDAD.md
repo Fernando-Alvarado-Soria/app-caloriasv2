@@ -113,7 +113,7 @@
 | 1.3 | **Fix: cargar modelo v2 desde `best_model.pt`, no desde `model_scripted.pt`** | El notebook v3 actual carga `model_scripted.pt` y extrae `state_dict()`. Esto es peligroso. Debe cargar `best_model.pt` (checkpoint completo) directamente desde Drive. | **CRITICO** | **COMPLETADA** |
 | 1.4 | **Guardar dataset Food-101 en Google Drive** | Montar Drive y descargar Food-101 a `/content/drive/MyDrive/food101/` para no re-descargar en cada sesion. | Alto | **COMPLETADA** |
 | 1.5 | **Guardar checkpoints en Google Drive** | Al finalizar entrenamiento, guardar `best_model.pt` en Drive con nombre versionado (`best_model_v3_mexican.pt`). | Alto | **COMPLETADA** |
-| 1.6 | **Recoleccion de imagenes mexicanas** | Ejecutar `ml.collect_images` en Colab y guardar las imagenes descargadas en Drive para reutilizarlas. | Alto | PENDIENTE |
+| 1.6 | **Recoleccion de imagenes mexicanas** | Ejecutar `ml.collect_images` localmente y subir dataset a Kaggle. | Alto | **COMPLETADA** |
 | 1.7 | **Logging de entrenamiento** | Guardar `logs/training.csv` con epoca, train_loss, val_loss, val_acc, LR, tiempo. Facilita comparar corridas. | Medio | **COMPLETADA** |
 | 1.8 | **Hiperparametros en YAML** | Crear `ml/config.yaml` con los parametros de cada version (v1, v2, v3). Permite versionar config y no depender de mutar `config.py` en runtime. | Medio | **COMPLETADA** |
 | 1.9 | **Entrenar modelo v3 mexicano** | Ejecutar notebook v3 con todas las mejoras anteriores, obtener modelo con 121+ clases. | **CRITICO** | PENDIENTE |
@@ -137,10 +137,11 @@
 - [ ] Railway sincronizado con modelo v3 real
 
 **Bloqueos actuales:**
-- [ ] **BLOQUEO:** Dataset mexicano no ha sido recolectado aun (imagenes no descargadas en Drive)
+- [x] **RESUELTO:** Dataset mexicano recolectado localmente (884 imagenes, 20 clases)
 - [x] **RESUELTO:** Notebook v3 corregido - carga desde `best_model.pt` (no `model_scripted.pt`)
 - [x] **RESUELTO:** Drive integrado para persistencia de dataset y checkpoints
 - [x] **RESUELTO:** Notebook Kaggle creado - alternativa a Colab
+- [ ] **NUEVO BLOQUEO:** Subir dataset ZIP a Kaggle y ejecutar entrenamiento v3
 
 ---
 
